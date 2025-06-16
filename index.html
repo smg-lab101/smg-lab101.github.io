@@ -1,1 +1,391 @@
-Hello World
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klimadaten-Visualisierung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+
+    .map-item canvas {
+      border: 1px solid #ccc;
+    }
+
+    .legend {
+      width: 100%;
+      margin: 0.5rem 0;
+      height: 50px;
+    }
+
+    .stat {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      width: 100%;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .canvas-tooltip {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 1050;
+      /* Bootstrap-friendly */
+      display: none;
+    }
+
+    .tick-label {
+      position: absolute;
+      font-size: 0.7rem;
+      text-align: center;
+      transform: translateX(-50%);
+      top: 18px;
+      color: #444;
+      width: 40px;
+    }
+
+    .tick-marker {
+      position: absolute;
+      width: 1px;
+      height: 8px;
+      background-color: #444;
+      top: 8px;
+      left: 0;
+      transform: translateX(-50%);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1 class="display-5 text-center my-4">Klimadaten-Visualisierung</h1>
+
+    <div class="mb-4 pt-3 pb-5">
+      <label for="timeSlider" class="form-label"></label>
+      <div class="position-relative">
+        <input type="range" class="form-range" id="timeSlider" min="0" max="0" step="1" value="0">
+        <output id="sliderLabel" class="position-absolute translate-middle bg-light px-2 border rounded small"
+          style="top: -28px; left: 0;">--</output>
+        <div id="sliderTicks" class="position-absolute start-0 w-100" style="top: 0.75rem; height: 30px;"></div>
+      </div>
+    </div>
+
+    <div class="canvas-tooltip" id="canvas-tooltip"></div>
+
+
+    <div class="row g-4 bg-light rounded  pb-3">
+      <div class="col-md-4 text-center pt-3 pb-3 bg-light rounded">
+        <h3>Temperatur</h3>
+        <canvas id="tempCanvas" width="360" height="300"></canvas>
+        <div class="legend" id="legend-temp"></div>
+        <div class="stat" id="stat-temp"></div>
+      </div>
+      <div class="col-md-4 text-center bg-success bg-opacity-10 rounded pt-3 pb-3">
+        <h3>Vegetation</h3>
+        <canvas id="ndviCanvas" width="360" height="300"></canvas>
+        <div class="legend" id="legend-ndvi"></div>
+        <div class="stat" id="stat-ndvi"></div>
+      </div>
+      <div class="col-md-4 text-center bg-light rounded pt-3 pb-3">
+        <h3>Niederschlag</h3>
+        <canvas id="precipCanvas" width="360" height="300" style="z-index: 0"></canvas>
+        <div class="legend" id="legend-precip"></div>
+        <div class="stat" id="stat-precip"></div>
+      </div>
+    </div>
+
+
+
+    <!-- Tabs für Zusatzinfos -->
+    <ul class="nav nav-tabs mt-5" id="infoTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button"
+          role="tab" aria-controls="data" aria-selected="true">Dateninformationen</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="author-tab" data-bs-toggle="tab" data-bs-target="#author" type="button" role="tab"
+          aria-controls="author" aria-selected="false">Autorin & Quellen</button>
+      </li>
+    </ul>
+    <div class="tab-content p-3 border border-top-0" id="infoTabsContent">
+      <div class="tab-pane fade show active" id="data" role="tabpanel" aria-labelledby="data-tab">
+        <div class="row">
+          <div class="col-md-7">
+            <p>
+              Diese Visualisierung basiert auf monatlich aggregierten Daten aus dem Earth System Data Cube.
+              Die dargestellten Parameter beinhalten NDVI (vegetative Aktivität), Temperatur auf 2 m Höhe sowie
+              Niederschlagsmengen.
+            </p>
+            <p>
+              Die Daten decken den Zeitraum von 2000 bis 2021 ab und wurden für Mitteleuropa extrahiert und verarbeitet.
+              Mithilfe der Anwendung können Veränderungen vegetativer Aktivität im Kontext der Erderwärmung interaktiv
+              nachvollzogen werden.
+            </p>
+          </div>
+          <div class="col-md-5 text-center">
+            <img src="NDVI-values-by-crop-condition.jpeg" alt="NDVI-Beispiel" class="img-fluid rounded mb-2">
+            <small class="text-muted d-block">Abb. 1: Beispielhafte NDVI-Darstellung im Juli 2020</small>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="author" role="tabpanel" aria-labelledby="author-tab">
+        <div class="row">
+          <!-- linke Spalte: Kontext -->
+          <div class="col-md-6">
+            <h5>Über diese Arbeit</h5>
+            <p>
+              Diese Anwendung wurde im Rahmen einer Bachelorarbeit im Studiengang <strong>Medieninformatik</strong> an
+              der HTW Berlin entwickelt.
+              Ziel war es, eine interaktive Webanwendung zur Visualisierung von Vegetations- und Klimadaten zu
+              realisieren,
+              um Laien ein besseres Verständnis für klimatische Veränderungen zu ermöglichen.
+            </p>
+            <p>
+              Autorin: <strong>Sarah Maria Gruber</strong><br>
+              Zeitraum: <strong>2025</strong><br>
+              Betreuung: <strong>Prof. Nassrin Hajinejad</strong>
+            </p>
+          </div>
+
+          <!-- rechte Spalte: Quellen -->
+          <div class="col-md-6">
+            <h5>Quellen</h5>
+            <ul class="small">
+              <li>
+                Earth System Data Cube, Version 3.0.2, Zeitraum 2000–2021.
+                <br><span class="text-muted">Max Planck Institute for Biogeochemistry.</span>
+              </li>
+              <li>
+                D3.js – Data-Driven Documents: <a href="https://d3js.org" target="_blank">https://d3js.org</a>
+              </li>
+              <li>
+                Bootstrap v5.3: <a href="https://getbootstrap.com" target="_blank">https://getbootstrap.com</a>
+              </li>
+              <li>
+                TopoJSON – Client library: <a href="https://github.com/topojson/topojson-client"
+                  target="_blank">topojson-client</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const width = 360, height = 300;
+    const tempCanvas = document.getElementById('tempCanvas');
+    const ndviCanvas = document.getElementById('ndviCanvas');
+    const precipCanvas = document.getElementById('precipCanvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const ndviCtx = ndviCanvas.getContext('2d');
+    const precipCtx = precipCanvas.getContext('2d');
+    const projection = d3.geoMercator()
+      .center([15, 52]).scale(500 * 0.6)
+      .translate([width / 2, height / 2]);
+    const times = Array.from({ length: 240 }, (_, i) => new Date(2000, i, 1).toISOString().slice(0, 7));
+
+    const slider = d3.select("#timeSlider").attr("max", times.length - 1);
+    const output = document.getElementById("sliderLabel");
+
+    const tickContainer = document.getElementById("sliderTicks");
+
+    // Jahres-Ticks unter dem Slider erzeugen
+    tickContainer.innerHTML = "";
+    const usedPercents = new Set();
+    for (let year = 2000; year <= 2020; year++) {
+      const index = times.findIndex(t => t.startsWith(`${year}-01`));
+      if (index === -1) continue;
+      const percent = Math.round((index / (times.length - 1)) * 100);
+      if (usedPercents.has(percent)) continue;
+      usedPercents.add(percent);
+      const marker = document.createElement("div");
+      marker.className = "tick-marker";
+      marker.style.left = `${percent}%`;
+      tickContainer.appendChild(marker);
+      const label = document.createElement("div");
+      label.className = "tick-label";
+      label.textContent = year;
+      label.style.left = `${percent}%`;
+      tickContainer.appendChild(label);
+    }
+
+    let trendData = {};
+    d3.json('rolling_5y_means.json').then(trends => {
+      trends.forEach(d => trendData[d.time] = d);
+      const start = times.indexOf('2000-03');
+      slider.property('value', start);
+      update(start);
+    });
+
+    const tempColorScale = d3.scaleLinear()
+      .domain([-10, 15, 40])
+      .range(["#371144", "#d64b57", "#fde9ab"]);
+    const ndviColorScale = d3.scaleLinear().domain([0, 1]).range(['#d9f0a3', '#004529']);
+    const precipColorScale = d3.scaleLinear().domain([0, 10]).range(['#f7fbff', '#08306b']);
+
+    function drawLegend(containerId, colorScale, label, legendId) {
+      const c = d3.select(containerId);
+      c.selectAll('*').remove();
+
+      const margin = { top: 7, right: 10, bottom: 30, left: 10 };
+      const innerW = width, innerH = 20;
+      const svgW = innerW + margin.left + margin.right;
+      const svgH = innerH + margin.top + margin.bottom;
+
+      const svg = c.append('svg')
+        .attr('width', svgW)
+        .attr('height', svgH)
+        .style('overflow', 'visible');
+
+      const defs = svg.append('defs');
+      const grad = defs.append('linearGradient')
+        .attr('id', 'grad-' + legendId)
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
+
+      const domain = colorScale.domain();
+      const range = colorScale.range();
+
+      range.forEach((color, i) => {
+        grad.append('stop')
+          .attr('offset', `${(i / (range.length - 1)) * 100}%`)
+          .attr('stop-color', color);
+      });
+
+      svg.append('rect')
+        .attr('x', margin.left)
+        .attr('y', margin.top)
+        .attr('width', innerW)
+        .attr('height', innerH)
+        .style('fill', 'url(#grad-' + legendId + ')');
+
+      const xScale = d3.scaleLinear().domain([domain[0], domain[domain.length - 1]]).range([margin.left, margin.left + innerW]);
+      const axis = d3.axisBottom(xScale).ticks(5).tickFormat(d => legendId === 'ndvi' ? d.toFixed(2) : d);
+
+      svg.append('g')
+        .attr('transform', `translate(0,${margin.top + innerH})`)
+        .call(axis);
+
+      svg.append('text')
+        .attr('x', svgW / 2)
+        .attr('y', margin.top - 5) // über der Skala
+        .attr('text-anchor', 'middle')
+        .style('font-size', '0.8rem')
+        .text(label);
+
+    }
+
+    function clearCanvas(ctx) { ctx.clearRect(0, 0, width, height); }
+    function drawPoints(ctx, data, colorFn) {
+      clearCanvas(ctx);
+      data.forEach(d => {
+        const [x, y] = projection([d.lon, d.lat]);
+        ctx.beginPath(); ctx.arc(x, y, 2, 0, 2 * Math.PI);
+        ctx.fillStyle = colorFn(d); ctx.fill();
+      });
+    }
+
+    function update(idx) {
+      const time = times[idx];
+      output.textContent = time;
+
+      const percent = idx / (times.length - 1);
+      const trackWidth = document.getElementById("timeSlider").getBoundingClientRect().width;
+      output.style.left = `${percent * trackWidth}px`; d3.select('#currentTime').text(time);
+      const s = trendData[time] || {};
+      const deltaTemp = (s.current_mean_temp != null && s.rolling_mean_temp != null)
+        ? (s.current_mean_temp - s.rolling_mean_temp).toFixed(2)
+        : '--';
+
+      d3.select('#stat-temp').html(`
+  Ø Aktuell: ${s.current_mean_temp ?? '--'} °C<br>
+  Δ zum Mittel: ${deltaTemp > 0 ? '+' : ''}${deltaTemp} °C
+`);
+      const deltaNdvi = (s.current_mean_ndvi != null && s.rolling_mean_ndvi != null)
+        ? (s.current_mean_ndvi - s.rolling_mean_ndvi).toFixed(3)
+        : '--';
+
+      d3.select('#stat-ndvi').html(`
+  Ø Aktuell: ${s.current_mean_ndvi ?? '--'}<br>
+  Δ zum Mittel: ${deltaNdvi > 0 ? '+' : ''}${deltaNdvi}
+`);
+      const deltaPrecip = (s.current_mean_precip != null && s.rolling_mean_precip != null)
+        ? (s.current_mean_precip - s.rolling_mean_precip).toFixed(2)
+        : '--';
+
+      d3.select('#stat-precip').html(`
+  Ø Aktuell: ${s.current_mean_precip ?? '--'} mm<br>
+  Δ zum Mittel: ${deltaPrecip > 0 ? '+' : ''}${deltaPrecip} mm
+`);
+
+      d3.json(`monthly_temp_ndvi_prec_json/${time}.json`).then(data => {
+        drawPoints(tempCtx, data, d => tempColorScale(d.air_temperature_2m));
+        drawPoints(ndviCtx, data, d => ndviColorScale(d.ndvi));
+        drawPoints(precipCtx, data, d => precipColorScale(d.precipitation_era5));
+
+        [tempCanvas, ndviCanvas, precipCanvas].forEach((canv, i) => {
+          canv.onmousemove = ev => {
+            const rect = canv.getBoundingClientRect();
+            const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+            const found = data.find(d => {
+              const [x, y] = projection([d.lon, d.lat]);
+              return Math.hypot(x - mx, y - my) < 3;
+            });
+            if (found) {
+              const field = i === 0 ? 'air_temperature_2m' : i === 1 ? 'ndvi' : 'precipitation_era5';
+              const name = i === 0 ? 'Temp' : i === 1 ? 'NDVI' : 'Precip';
+              showTooltip(ev, `${name}<br>Lat:${found.lat.toFixed(2)}<br>Lon:${found.lon.toFixed(2)}<br>Value:${found[field]}`);
+            } else hideTooltip();
+          };
+          canv.onmouseleave = hideTooltip;
+        });
+
+        drawLegend('#legend-temp', tempColorScale, 'Temperatur (°C)', 'temp');
+        drawLegend('#legend-ndvi', ndviColorScale, 'NDVI', 'ndvi');
+        drawLegend('#legend-precip', precipColorScale, 'Niederschlag (mm)', 'precip');
+      });
+
+
+    }
+
+    const canvasTooltip = d3.select('#canvas-tooltip');
+
+
+    function showTooltip(ev, html) {
+      canvasTooltip.style('display', 'block').html(html)
+        .style('left', (ev.pageX + 10) + 'px')
+        .style('top', (ev.pageY - 30) + 'px');
+      console.log("hi")
+    }
+
+    function hideTooltip() {
+      canvasTooltip.style('display', 'none');
+    }
+
+
+    slider.on('input', function () { update(+this.value); });
+
+
+  </script>
+
+</body>
+
+</html>
