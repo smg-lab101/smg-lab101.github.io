@@ -1,169 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Klimadaten-Visualisierung</title>
+  <meta name="description"
+    content="Interaktive Webanwendung zur Visualisierung von NDVI, Temperatur und Niederschlag in Mitteleuropa.">
+  <meta name="author" content="Sarah Maria Gruber">
+  <title>Klima-Explorer</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 1rem;
-    }
+  <link rel="stylesheet" href="style.css">
 
-    .map-item canvas {
-      border: 1px solid #ccc;
-    }
-
-    .legend {
-      width: 100%;
-      margin: 0.5rem 0;
-      height: 50px;
-    }
-
-    .stat {
-      margin-top: 0.5rem;
-      padding: 0.5rem;
-      width: 100%;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 0.9rem;
-    }
-
-    .canvas-tooltip {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      border-radius: 4px;
-      pointer-events: none;
-      font-size: 0.8rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      z-index: 1050;
-      /* Bootstrap-friendly */
-      display: none;
-    }
-
-    .tick-label {
-      position: absolute;
-      font-size: 0.7rem;
-      text-align: center;
-      transform: translateX(-50%);
-      top: 18px;
-      color: #444;
-      width: 40px;
-    }
-
-    .tick-marker {
-      position: absolute;
-      width: 1px;
-      height: 8px;
-      background-color: #444;
-      top: 8px;
-      left: 0;
-      transform: translateX(-50%);
-    }
-  </style>
 </head>
 
 <body>
-
   <div class="container">
-    <h1 class="display-5 text-center my-4">Klimadaten-Visualisierung</h1>
-
+    <header class="bg-success border-bottom py-3 mb-4">
+      <div class="container text-center">
+        <h1 class="display-6 mb-0 text-white">Klima-Explorer</h1>
+        <small class="text-white">NDVI, Temperatur und Niederschlag interaktiv erkunden</small>
+      </div>
+    </header>
     <div class="mb-4 pt-3 pb-5">
       <label for="timeSlider" class="form-label"></label>
       <div class="position-relative">
         <input type="range" class="form-range" id="timeSlider" min="0" max="0" step="1" value="0">
-        <output id="sliderLabel" class="position-absolute translate-middle bg-light px-2 border rounded small"
-          style="top: -28px; left: 0;">--</output>
-        <div id="sliderTicks" class="position-absolute start-0 w-100" style="top: 0.75rem; height: 30px;"></div>
+        <output id="sliderLabel"
+          class="position-absolute translate-middle bg-light px-2 border rounded small">--</output>
+        <div id="sliderTicks" class="position-absolute start-0 w-100"></div>
       </div>
     </div>
 
-    <div class="canvas-tooltip" id="canvas-tooltip"></div>
-
+    <div class="canvas-tooltip" id="tooltip-temp"></div>
+    <div class="canvas-tooltip" id="tooltip-ndvi"></div>
+    <div class="canvas-tooltip" id="tooltip-precip"></div>
 
     <div class="row g-4 bg-light rounded  pb-3">
-      <div class="col-md-4 text-center pt-3 pb-3 bg-light rounded">
+      <div class="col-md-4 text-center bg-light rounded pt-3 pb-3">
         <h3>Temperatur</h3>
         <canvas id="tempCanvas" width="360" height="300"></canvas>
-        <div class="legend" id="legend-temp"></div>
-        <div class="stat" id="stat-temp"></div>
+        <div class="legend-block">
+          <div class="legend-title">Temperatur (°C)</div>
+          <div class="legend-gradient temp"></div>
+          <div class="legend-labels">
+            <span>-10</span>
+            <span>15</span>
+            <span>40</span>
+          </div>
+        </div>
+        <div class="ms-1 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+          title="Ø Aktuell: Mittelwert der aktuell sichtbaren Daten.<br>&#10;Ø 5 Jahre: Gleitender Durchschnitt desselben Monats der letzten 5 Jahre.<br>&#10;Δ: Differenz der beiden Werte.">
+          <div class="stat" id="stat-temp"></div>
+        </div>
+
       </div>
-      <div class="col-md-4 text-center bg-success bg-opacity-10 rounded pt-3 pb-3">
+      <div class="col-md-4 text-center border border-success border-3 rounded pt-3 pb-3 bg-light">
         <h3>Vegetation</h3>
         <canvas id="ndviCanvas" width="360" height="300"></canvas>
-        <div class="legend" id="legend-ndvi"></div>
-        <div class="stat" id="stat-ndvi"></div>
+        <div class="legend-block">
+          <div class="legend-title">NDVI</div>
+          <div class="legend-gradient ndvi"></div>
+          <div class="legend-labels">
+            <span>0.0</span>
+            <span>0.5</span>
+            <span>1.0</span>
+          </div>
+        </div>
+        <div class="ms-1 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+          title="Ø Aktuell: Mittelwert der aktuell sichtbaren Daten.<br>&#10;Ø 5 Jahre: Gleitender Durchschnitt desselben Monats der letzten 5 Jahre.<br>&#10;Δ: Differenz der beiden Werte.">
+          <div class="stat" id="stat-ndvi"></div>
+        </div>
       </div>
       <div class="col-md-4 text-center bg-light rounded pt-3 pb-3">
         <h3>Niederschlag</h3>
-        <canvas id="precipCanvas" width="360" height="300" style="z-index: 0"></canvas>
-        <div class="legend" id="legend-precip"></div>
-        <div class="stat" id="stat-precip"></div>
+        <canvas id="precipCanvas" width="360" height="300"></canvas>
+        <div class="legend-block">
+          <div class="legend-title">Niederschlag (mm)</div>
+          <div class="legend-gradient precip"></div>
+          <div class="legend-labels">
+            <span>0</span>
+            <span>5</span>
+            <span>10</span>
+          </div>
+        </div>
+        <div class="ms-1 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+          title="Ø Aktuell: Mittelwert der aktuell sichtbaren Daten.<br>&#10;Ø 5 Jahre: Gleitender Durchschnitt desselben Monats der letzten 5 Jahre.<br>&#10;Δ: Differenz der beiden Werte.">
+          <div class="stat" id="stat-precip"></div>
+        </div>
       </div>
     </div>
-
-
 
     <!-- Tabs für Zusatzinfos -->
     <ul class="nav nav-tabs mt-5" id="infoTabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button"
-          role="tab" aria-controls="data" aria-selected="true">Dateninformationen</button>
+        <button class="nav-link active" id="vegetation-tab" data-bs-toggle="tab" data-bs-target="#vegetation"
+          type="button" role="tab" aria-controls="vegetation" aria-selected="true">Vegetation</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button"
+          role="tab" aria-controls="metrics" aria-selected="false">Metriken</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab"
+          aria-controls="data" aria-selected="false">Allgemein</button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="author-tab" data-bs-toggle="tab" data-bs-target="#author" type="button" role="tab"
           aria-controls="author" aria-selected="false">Autorin & Quellen</button>
       </li>
     </ul>
+
+
     <div class="tab-content p-3 border border-top-0" id="infoTabsContent">
-      <div class="tab-pane fade show active" id="data" role="tabpanel" aria-labelledby="data-tab">
+      <div class="tab-pane fade show active" id="vegetation" role="tabpanel" aria-labelledby="vegetation-tab">
         <div class="row">
-          <div class="col-md-7">
+          <div class="col-md-12">
+            <h5 class="mb-3">🌱 Vegetation verstehen – NDVI, Temperatur und Niederschlag</h5>
+
             <p>
-              Diese Visualisierung basiert auf monatlich aggregierten Daten aus dem Earth System Data Cube.
-              Die dargestellten Parameter beinhalten NDVI (vegetative Aktivität), Temperatur auf 2 m Höhe sowie
-              Niederschlagsmengen.
+              Der <strong>NDVI</strong> (Normalized Difference Vegetation Index) zeigt, wie grün und
+              pflanzenreich eine Fläche ist – je höher der Wert, desto gesünder und dichter die
+              Vegetation.
+              Typische Werte reichen von etwa <strong>0,2</strong> (trockene oder kahle Böden) bis
+              <strong>0,7</strong> (Wälder oder feuchte Wiesen).
             </p>
+
             <p>
-              Die Daten decken den Zeitraum von 2000 bis 2021 ab und wurden für Mitteleuropa extrahiert und verarbeitet.
-              Mithilfe der Anwendung können Veränderungen vegetativer Aktivität im Kontext der Erderwärmung interaktiv
-              nachvollzogen werden.
+              ☀️ Die <strong>Temperatur</strong> beeinflusst das Pflanzenwachstum stark:
+              Werte von <strong>unter 0 °C</strong> deuten auf Winterbedingungen hin, bei <strong>über
+                35 °C</strong> kann es zu Hitzestress kommen.
+              Ideal sind gemäßigte Temperaturen zwischen <strong>10 °C und 25 °C</strong>.
             </p>
-          </div>
-          <div class="col-md-5 text-center">
-            <img src="NDVI-values-by-crop-condition.jpeg" alt="NDVI-Beispiel" class="img-fluid rounded mb-2">
-            <small class="text-muted d-block">Abb. 1: Beispielhafte NDVI-Darstellung im Juli 2020</small>
+
+            <p>
+              💧 Der <strong>Niederschlag</strong> zeigt, wie viel Wasser (auch Schnee) im Durchschnitt
+              pro Tag gefallen
+              ist – gemessen in <em>Millimeter pro Tag (mm/d)</em>.
+              Bei <strong>0 mm/d</strong> herrscht Trockenheit, ab etwa <strong>5 mm/d</strong> ist meist
+              ausreichend Feuchtigkeit für das Pflanzenwachstum vorhanden.
+            </p>
+
+            <p>
+              ➡️ <strong>Zusammenspiel:</strong> Vegetation gedeiht besonders dort, wo <strong>ausreichend
+                Niederschlag</strong> fällt <em>und</em> die <strong>Temperaturen weder zu kalt noch zu
+                heiß</strong> sind.
+              Durch diese drei Werte lassen sich Veränderungen in der Umwelt sichtbar und nachvollziehbar
+              machen.
+            </p>
           </div>
         </div>
+
       </div>
-      <div class="tab-pane fade" id="author" role="tabpanel" aria-labelledby="author-tab">
+
+      <div class="tab-pane fade" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
         <div class="row">
-          <!-- linke Spalte: Kontext -->
           <div class="col-md-6">
-            <h5>Über diese Arbeit</h5>
+            <h5 class="mb-3">📊 Erläuterung der Metriken</h5>
+            <ul>
+              <li><strong>Ø Aktuell:</strong> Mittelwert aller sichtbaren Werte im gewählten Monat</li>
+              <li><strong>Ø 5 Jahre:</strong> Durchschnitt desselben Monats über die letzten fünf Jahre
+              </li>
+              <li><strong>Δ Differenz:</strong> Abweichung zwischen aktuellem Wert und Ø 5 Jahre</li>
+            </ul>
+
+            <h5 class="mt-4 mb-3">Was bedeutet Rolling Mean?</h5>
             <p>
-              Diese Anwendung wurde im Rahmen einer Bachelorarbeit im Studiengang <strong>Medieninformatik</strong> an
-              der HTW Berlin entwickelt.
-              Ziel war es, eine interaktive Webanwendung zur Visualisierung von Vegetations- und Klimadaten zu
-              realisieren,
-              um Laien ein besseres Verständnis für klimatische Veränderungen zu ermöglichen.
+              Der <strong>gleitende 5-Jahres-Durchschnitt</strong> vergleicht jeden Monat ab März 2005 nur
+              mit demselben Kalendermonat der fünf Vorjahre.
+              Für Januar 2010 wären das z. B. die Werte von Januar 2005–2009.
             </p>
             <p>
-              Autorin: <strong></strong><br>
-              Zeitraum: <strong>2025</strong><br>
-              Betreuung: <strong></strong>
+              So werden Ausreißer geglättet und <strong>langfristige Trends</strong> wie Erwärmung oder
+              Trockenheit besser sichtbar.
             </p>
           </div>
 
-          <!-- rechte Spalte: Quellen -->
+          <div class="col-md-6 text-center">
+            <img src="images/meaning_rolling_mean.png" alt="alt=" Vergleich zwischen Unterschied zu Monat des Vorjahres
+              und Durchschnittswert der Monate auf 5 Jahren davor" class="img-fluid rounded mb-2">
+            <small class="text-muted d-block">Abb. 1: Rolling Mean im Vergleich zum Vorjahr</small>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="tab-pane fade" id="data" role="tabpanel" aria-labelledby="data-tab">
+        <div class="row">
+          <div class="col-md-6">
+            <h5 class="mb-3">Daten</h5>
+            <p>Diese Visualisierung basiert auf monatlich aggregierten Daten aus dem <strong>Earth System
+                Data Cube</strong>. Die dargestellten Parameter beinhalten den <strong>NDVI</strong>,
+              die <strong>Temperatur</strong> in 2 m Höhe sowie die <strong>Niederschlagsmengen</strong>.
+            </p>
+            <p>Die Daten decken den Zeitraum von <strong>2000 bis 2021</strong> ab und wurden für
+              <strong>Mitteleuropa</strong> extrahiert. Sie ermöglichen ein interaktives Verständnis
+              klimatischer Veränderungen.
+            </p>
+            <p>Rechts ist ein Beispiel mit echten Rohdaten aus drei Punkten dargestellt.</p>
+          </div>
+          <div class="col-md-6">
+            <h5 class="mb-3">Exemplarischer Auszug der Daten</h5>
+
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Position (Lat/Lon)</th>
+                  <th>NDVI / Ø 5J</th>
+                  <th>Temp (°C) / Ø 5J</th>
+                  <th>Precip (mm/d) / Ø 5J</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>34.125 / –6.625</td>
+                  <td>0.31 / 0.33</td>
+                  <td>24.72 / 23.73</td>
+                  <td>0.08 / 0.03</td>
+                </tr>
+                <tr>
+                  <td>34.125 / –6.375</td>
+                  <td>0.27 / 0.30</td>
+                  <td>25.99 / 24.71</td>
+                  <td>0.14 / 0.04</td>
+                </tr>
+                <tr>
+                  <td>34.125 / –6.125</td>
+                  <td>0.28 / 0.31</td>
+                  <td>27.20 / 25.68</td>
+                  <td>0.29 / 0.08</td>
+                </tr>
+              </tbody>
+            </table>
+            <small class="text-muted d-block"> Tab. 1: Auszug des Datensatzes Juli 2016
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="author" role="tabpanel" aria-labelledby="author-tab">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Über diese Arbeit</h5>
+            <p>
+              Diese Anwendung wurde im Rahmen einer Bachelorarbeit im Studiengang
+              <strong>Medieninformatik</strong> an der HTW Berlin entwickelt.
+              Ziel war es, eine interaktive Webanwendung zur Visualisierung von
+              Umweltdaten zu realisieren, um Laien ein besseres Verständnis für klimatische Veränderungen
+              zu ermöglichen.
+            </p>
+            <p>
+              Autorin: <strong>Sarah Maria Gruber</strong><br>
+              Zeitraum: <strong>2025</strong><br>
+              Betreuung: <strong>Prof. Nassrin Hajinejad</strong>
+            </p>
+          </div>
+
           <div class="col-md-6">
             <h5>Quellen</h5>
             <ul class="small">
@@ -185,206 +279,21 @@
           </div>
         </div>
       </div>
-
     </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    const width = 360, height = 300;
-    const tempCanvas = document.getElementById('tempCanvas');
-    const ndviCanvas = document.getElementById('ndviCanvas');
-    const precipCanvas = document.getElementById('precipCanvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    const ndviCtx = ndviCanvas.getContext('2d');
-    const precipCtx = precipCanvas.getContext('2d');
-    const projection = d3.geoMercator()
-      .center([15, 52]).scale(500 * 0.6)
-      .translate([width / 2, height / 2]);
-    const times = Array.from({ length: 240 }, (_, i) => new Date(2000, i, 1).toISOString().slice(0, 7));
-
-    const slider = d3.select("#timeSlider").attr("max", times.length - 1);
-    const output = document.getElementById("sliderLabel");
-
-    const tickContainer = document.getElementById("sliderTicks");
-
-    // Jahres-Ticks unter dem Slider erzeugen
-    tickContainer.innerHTML = "";
-    const usedPercents = new Set();
-    for (let year = 2000; year <= 2020; year++) {
-      const index = times.findIndex(t => t.startsWith(`${year}-01`));
-      if (index === -1) continue;
-      const percent = Math.round((index / (times.length - 1)) * 100);
-      if (usedPercents.has(percent)) continue;
-      usedPercents.add(percent);
-      const marker = document.createElement("div");
-      marker.className = "tick-marker";
-      marker.style.left = `${percent}%`;
-      tickContainer.appendChild(marker);
-      const label = document.createElement("div");
-      label.className = "tick-label";
-      label.textContent = year;
-      label.style.left = `${percent}%`;
-      tickContainer.appendChild(label);
-    }
-
-    let trendData = {};
-    d3.json('rolling_5y_means.json').then(trends => {
-      trends.forEach(d => trendData[d.time] = d);
-      const start = times.indexOf('2000-03');
-      slider.property('value', start);
-      update(start);
-    });
-
-    const tempColorScale = d3.scaleLinear()
-      .domain([-10, 15, 40])
-      .range(["#371144", "#d64b57", "#fde9ab"]);
-    const ndviColorScale = d3.scaleLinear().domain([0, 1]).range(['#d9f0a3', '#004529']);
-    const precipColorScale = d3.scaleLinear().domain([0, 10]).range(['#f7fbff', '#08306b']);
-
-    function drawLegend(containerId, colorScale, label, legendId) {
-      const c = d3.select(containerId);
-      c.selectAll('*').remove();
-
-      const margin = { top: 7, right: 10, bottom: 30, left: 10 };
-      const innerW = width, innerH = 20;
-      const svgW = innerW + margin.left + margin.right;
-      const svgH = innerH + margin.top + margin.bottom;
-
-      const svg = c.append('svg')
-        .attr('width', svgW)
-        .attr('height', svgH)
-        .style('overflow', 'visible');
-
-      const defs = svg.append('defs');
-      const grad = defs.append('linearGradient')
-        .attr('id', 'grad-' + legendId)
-        .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
-
-      const domain = colorScale.domain();
-      const range = colorScale.range();
-
-      range.forEach((color, i) => {
-        grad.append('stop')
-          .attr('offset', `${(i / (range.length - 1)) * 100}%`)
-          .attr('stop-color', color);
-      });
-
-      svg.append('rect')
-        .attr('x', margin.left)
-        .attr('y', margin.top)
-        .attr('width', innerW)
-        .attr('height', innerH)
-        .style('fill', 'url(#grad-' + legendId + ')');
-
-      const xScale = d3.scaleLinear().domain([domain[0], domain[domain.length - 1]]).range([margin.left, margin.left + innerW]);
-      const axis = d3.axisBottom(xScale).ticks(5).tickFormat(d => legendId === 'ndvi' ? d.toFixed(2) : d);
-
-      svg.append('g')
-        .attr('transform', `translate(0,${margin.top + innerH})`)
-        .call(axis);
-
-      svg.append('text')
-        .attr('x', svgW / 2)
-        .attr('y', margin.top - 5) // über der Skala
-        .attr('text-anchor', 'middle')
-        .style('font-size', '0.8rem')
-        .text(label);
-
-    }
-
-    function clearCanvas(ctx) { ctx.clearRect(0, 0, width, height); }
-    function drawPoints(ctx, data, colorFn) {
-      clearCanvas(ctx);
-      data.forEach(d => {
-        const [x, y] = projection([d.lon, d.lat]);
-        ctx.beginPath(); ctx.arc(x, y, 2, 0, 2 * Math.PI);
-        ctx.fillStyle = colorFn(d); ctx.fill();
-      });
-    }
-
-    function update(idx) {
-      const time = times[idx];
-      output.textContent = time;
-
-      const percent = idx / (times.length - 1);
-      const trackWidth = document.getElementById("timeSlider").getBoundingClientRect().width;
-      output.style.left = `${percent * trackWidth}px`; d3.select('#currentTime').text(time);
-      const s = trendData[time] || {};
-      const deltaTemp = (s.current_mean_temp != null && s.rolling_mean_temp != null)
-        ? (s.current_mean_temp - s.rolling_mean_temp).toFixed(2)
-        : '--';
-
-      d3.select('#stat-temp').html(`
-  Ø Aktuell: ${s.current_mean_temp ?? '--'} °C<br>
-  Δ zum Mittel: ${deltaTemp > 0 ? '+' : ''}${deltaTemp} °C
-`);
-      const deltaNdvi = (s.current_mean_ndvi != null && s.rolling_mean_ndvi != null)
-        ? (s.current_mean_ndvi - s.rolling_mean_ndvi).toFixed(3)
-        : '--';
-
-      d3.select('#stat-ndvi').html(`
-  Ø Aktuell: ${s.current_mean_ndvi ?? '--'}<br>
-  Δ zum Mittel: ${deltaNdvi > 0 ? '+' : ''}${deltaNdvi}
-`);
-      const deltaPrecip = (s.current_mean_precip != null && s.rolling_mean_precip != null)
-        ? (s.current_mean_precip - s.rolling_mean_precip).toFixed(2)
-        : '--';
-
-      d3.select('#stat-precip').html(`
-  Ø Aktuell: ${s.current_mean_precip ?? '--'} mm<br>
-  Δ zum Mittel: ${deltaPrecip > 0 ? '+' : ''}${deltaPrecip} mm
-`);
-
-      d3.json(`monthly_temp_ndvi_prec_json/${time}.json`).then(data => {
-        drawPoints(tempCtx, data, d => tempColorScale(d.air_temperature_2m));
-        drawPoints(ndviCtx, data, d => ndviColorScale(d.ndvi));
-        drawPoints(precipCtx, data, d => precipColorScale(d.precipitation_era5));
-
-        [tempCanvas, ndviCanvas, precipCanvas].forEach((canv, i) => {
-          canv.onmousemove = ev => {
-            const rect = canv.getBoundingClientRect();
-            const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
-            const found = data.find(d => {
-              const [x, y] = projection([d.lon, d.lat]);
-              return Math.hypot(x - mx, y - my) < 3;
-            });
-            if (found) {
-              const field = i === 0 ? 'air_temperature_2m' : i === 1 ? 'ndvi' : 'precipitation_era5';
-              const name = i === 0 ? 'Temp' : i === 1 ? 'NDVI' : 'Precip';
-              showTooltip(ev, `${name}<br>Lat:${found.lat.toFixed(2)}<br>Lon:${found.lon.toFixed(2)}<br>Value:${found[field]}`);
-            } else hideTooltip();
-          };
-          canv.onmouseleave = hideTooltip;
-        });
-
-        drawLegend('#legend-temp', tempColorScale, 'Temperatur (°C)', 'temp');
-        drawLegend('#legend-ndvi', ndviColorScale, 'NDVI', 'ndvi');
-        drawLegend('#legend-precip', precipColorScale, 'Niederschlag (mm)', 'precip');
-      });
+    <footer class="mt-5 py-4 text-white text-center" style="background-color: #198754;">
+      <div class="container">
+        <small>
+          &copy; 2025 Sarah Maria Gruber – Abschlussprojekt Medieninformatik, HTW Berlin<br>
+          Datenbasis: Earth System Data Cube · Visualisierung mit D3.js · Hosted on GitHub Pages
+        </small>
+      </div>
+    </footer>
 
 
-    }
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    const canvasTooltip = d3.select('#canvas-tooltip');
+    <script src="app.js"></script>
 
-
-    function showTooltip(ev, html) {
-      canvasTooltip.style('display', 'block').html(html)
-        .style('left', (ev.pageX + 10) + 'px')
-        .style('top', (ev.pageY - 30) + 'px');
-      console.log("hi")
-    }
-
-    function hideTooltip() {
-      canvasTooltip.style('display', 'none');
-    }
-
-
-    slider.on('input', function () { update(+this.value); });
-
-
-  </script>
 
 </body>
 
