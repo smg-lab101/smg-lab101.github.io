@@ -3,7 +3,16 @@
      padding: 1rem;
  }
 
+ :root {
+     --custom-green-dark: #2d5902;
+     --custom-green: #9cbf81;
 
+     /* Ursprüngliches Bootstrap-Grün 
+          --custom-green: red;
+     --custom-green-dark: blue;
+
+*/
+ }
 
  .legend {
      width: 100%;
@@ -20,6 +29,17 @@
      border-radius: 4px;
      text-align: center;
      font-size: 0.9rem;
+ }
+
+ footer,
+ header {
+     background-color: var(--custom-green);
+     color: var(--custom-green-dark)
+ }
+
+ h1 {
+     font-weight: 400 !important;
+     text-shadow: 0.5px 0.5px 1px;
  }
 
  .stat td {
@@ -80,37 +100,34 @@
  }
 
  #timeSlider::-webkit-slider-thumb {
-     background-color: #198754;
-     /* Bootstrap Grün (success) */
-     border: 1px solid #146c43;
+     background-color: var(--custom-green);
+     border: 1px solid var(--custom-green-dark);
  }
 
  #timeSlider::-moz-range-thumb {
-     background-color: #198754;
-     border: 1px solid #146c43;
+     background-color: var(--custom-green);
+     border: 1px solid var(--custom-green-dark);
  }
 
  #timeSlider::-ms-thumb {
-     background-color: #198754;
-     border: 1px solid #146c43;
+     background-color: var(--custom-green);
+     border: 1px solid var(--custom-green-dark);
  }
 
  .nav-tabs .nav-link {
-     color: #198754;
+     color: var(--custom-green-dark);
      /* grün auch bei inaktiven Tabs */
      border: 1px solid transparent;
  }
 
  .nav-tabs .nav-link.active {
-     color: #198754;
+     color: var(--custom-green-dark);
 
-     border-color: #198754 #198754 white;
+     border-color: var(--custom-green-dark) var(--custom-green-dark) white;
  }
 
-
-
  .nav-tabs .nav-link:hover {
-     border-color: #198754 #198754 white;
+     border-color: var(--custom-green-dark) var(--custom-green-dark) white;
  }
 
  .legend-block {
@@ -153,8 +170,8 @@
 
  .tab-content {
      transition: opacity 0.3s ease-in-out;
-     border-color: var(--bs-success);
-     border: 1px solid #198754;
+     border: 1px solid var(--custom-green-dark) !important;
+     border-top: none !important;
      border-top: none;
      border-radius: 0 0 0.375rem 0.375rem;
      margin-top: 10px;
@@ -175,8 +192,4 @@
  #sliderTicks {
      top: 0.75rem;
      height: 30px;
- }
-
- #precipCanvas {
-     z-index: 0;
  }

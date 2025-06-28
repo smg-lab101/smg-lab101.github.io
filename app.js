@@ -45,11 +45,11 @@ const config = {
 const EUROPE_LON = [-12.0, 30.0];
 const EUROPE_LAT = [34.0, 62.0];
 
-// Neue Mitte berechnen
+// Determine center according to map
 const centerLon = (EUROPE_LON[0] + EUROPE_LON[1]) / 2; // 9.0
 const centerLat = (EUROPE_LAT[0] + EUROPE_LAT[1]) / 2; // 48.0
 
-const baseScale = 500 * 0.95; // passt zur Formel im Zoom
+const baseScale = 500;
 const projection = d3.geoMercator()
     .center([centerLon, centerLat])
     .scale(baseScale)
@@ -102,36 +102,43 @@ function drawPoints(ctx, data, colorFn) {
         ctx.arc(x, y, POINT_RADIUS, 0, 2 * Math.PI);
         ctx.fillStyle = colorFn(d);
         ctx.fill();
-
     });
 }
 
 function setupCanvasInteraction(canvas, ctx, configKey) {
+    setupTooltipInteraction(canvas, configKey);
+    setupZoomInteraction(canvas);
+}
+
+function setupTooltipInteraction(canvas, configKey) {
     const { color } = config.fieldMap[configKey];
+
     canvas.addEventListener('mousemove', ev => {
         const rect = canvas.getBoundingClientRect();
         const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+
         const found = lastData.find(d => {
             const [x, y] = projection([d.lon, d.lat]);
             return Math.hypot(x - mx, y - my) < 3;
         });
+
         if (found) {
             showAllTooltips(ev, found);
         } else {
             hideAllTooltips();
         }
-
     });
 
     canvas.addEventListener('mouseleave', hideAllTooltips);
+}
 
+function setupZoomInteraction(canvas) {
     d3.select(canvas).call(
         d3.zoom()
             .scaleExtent([1, 6])
             .on("zoom", ({ transform }) => {
                 const k = transform.k;
 
-                // Begrenzung des Pannings
                 const panPaddingFactor = .95;
                 const maxPanX = (config.width * (k - 1)) / 2 * panPaddingFactor;
                 const maxPanY = (config.height * (k - 1)) / 2 * panPaddingFactor;
@@ -145,15 +152,10 @@ function setupCanvasInteraction(canvas, ctx, configKey) {
                         config.width / 2 + clampedX,
                         config.height / 2 + clampedY
                     ]);
+
                 renderAll();
             })
     );
-}
-
-function hideAllTooltips() {
-    ['temp', 'ndvi', 'precip'].forEach(key => {
-        d3.select(`#tooltip-${key}`).classed('show', false);
-    });
 }
 
 function renderAll() {
@@ -234,5 +236,11 @@ function showAllTooltips(ev, point) {
             .style('left', `${canvasRect.left + px + window.scrollX + 10}px`)
             .style('top', `${canvasRect.top + py + window.scrollY - 30}px`)
             .classed('show', true);
+    });
+}
+
+function hideAllTooltips() {
+    ['temp', 'ndvi', 'precip'].forEach(key => {
+        d3.select(`#tooltip-${key}`).classed('show', false);
     });
 }
