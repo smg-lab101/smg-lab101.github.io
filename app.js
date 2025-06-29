@@ -226,7 +226,6 @@ function showAllTooltips(ev, point) {
             Δ: ${deltaText}
         `;
 
-        // Projektion auf aktuelle Canvas berechnen
         const [px, py] = projection([point.lon, point.lat]);
         const canvas = document.getElementById(`${key}Canvas`);
         const canvasRect = canvas.getBoundingClientRect();

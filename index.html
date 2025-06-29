@@ -90,6 +90,10 @@
     <!-- Tabs für Zusatzinfos -->
     <ul class="nav nav-tabs mt-5" id="infoTabs" role="tablist">
       <li class="nav-item" role="presentation">
+        <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab"
+          aria-controls="data" aria-selected="false">Allgemein</button>
+      </li>
+      <li class="nav-item" role="presentation">
         <button class="nav-link active" id="vegetation-tab" data-bs-toggle="tab" data-bs-target="#vegetation"
           type="button" role="tab" aria-controls="vegetation" aria-selected="true">Vegetation</button>
       </li>
@@ -97,10 +101,7 @@
         <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button"
           role="tab" aria-controls="metrics" aria-selected="false">Metriken</button>
       </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab"
-          aria-controls="data" aria-selected="false">Allgemein</button>
-      </li>
+
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="author-tab" data-bs-toggle="tab" data-bs-target="#author" type="button" role="tab"
           aria-controls="author" aria-selected="false">Autorin & Quellen</button>
@@ -128,8 +129,9 @@
               💧 Der <strong>Niederschlag</strong> zeigt, wie viel Wasser (auch Schnee) im Durchschnitt
               pro Tag gefallen
               ist – gemessen in <em>Millimeter pro Tag (mm/d)</em>.
-              Bei <strong>0 mm/d</strong> herrscht Trockenheit, ab etwa <strong>5 mm/d</strong> ist meist
-              ausreichend Feuchtigkeit für das Pflanzenwachstum vorhanden.
+              Welche Mengen für das Pflanzenwachstum ausreichend sind, hängt stark von der <strong>Klimazone</strong>,
+              der <strong>Jahreszeit</strong>, dem <strong>Bodentyp</strong> und der <strong>Art der Vegetation</strong>
+              ab
             </p>
             <p>
               ➡️ <strong>Zusammenspiel:</strong> Vegetation gedeiht besonders dort, wo <strong>ausreichend
@@ -174,8 +176,9 @@
           <div class="col-md-6">
             <h5 class="mb-3">Daten</h5>
             <p>Diese Visualisierung basiert auf monatlich aggregierten Daten aus dem <strong>Earth System
-                Data Cube</strong>. Die dargestellten Parameter beinhalten den <strong>NDVI</strong>,
-              die <strong>Temperatur</strong> in 2 m Höhe sowie die <strong>Niederschlagsmengen</strong>.
+                Data Cube</strong>. Die dargestellten Parameter beinhalten den <strong>NDVI</strong> (Normalized
+              Difference Vegetation Index),
+              die <strong>Temperatur</strong> in 2 Metern Höhe sowie die <strong>Niederschlagsmengen</strong>.
             </p>
             <p>Die Daten decken den Zeitraum von <strong>2000 bis 2021</strong> ab und wurden für
               <strong>Mitteleuropa</strong> extrahiert. Sie ermöglichen ein interaktives Verständnis
