@@ -16,13 +16,7 @@ function init() {
     setupCanvasInteraction(ndviCanvas, ndviCtx, 'ndvi');
     setupCanvasInteraction(precipCanvas, precipCtx, 'precip');
 
-    const slider = d3.select("#timeSlider").attr("max", times.length - 1);
-    slider.on('input', function () { update(+this.value); });
-    createSliderTicks(times, document.getElementById("sliderTicks"));
-
-    const start = times.indexOf('2000-03');
-    slider.property('value', start);
-    update(start);
+    setUpSlider();
 
     // Bootstrap Tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -103,6 +97,16 @@ function drawPoints(ctx, data, colorFn) {
         ctx.fillStyle = colorFn(d);
         ctx.fill();
     });
+}
+
+function setUpSlider() {
+    const slider = d3.select("#timeSlider").attr("max", times.length - 1);
+    slider.on('input', function () { update(+this.value); });
+    createSliderTicks(times, document.getElementById("sliderTicks"));
+
+    const start = times.indexOf('2000-03');
+    slider.property('value', start);
+    update(start);
 }
 
 function setupCanvasInteraction(canvas, ctx, configKey) {
