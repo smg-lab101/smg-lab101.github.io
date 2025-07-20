@@ -18,11 +18,7 @@ Die Anwendung ermöglicht die **interaktive Erkundung des NDVI (Normalized Diffe
 
 ## 📦 Datengrundlage
 
-Die dargestellten Daten stammen aus dem [**Earth System Data Cube** (Version 3.0.2)](http://www.earthsystemdatalab.net/), einer multidimensionalen Umwelt-Datenstruktur, die verschiedene Fernerkundungs- und Reanalysedatensätze zusammenführt:
-
-- **NDVI** (MODIS)
-- **Lufttemperatur 2 m** (ERA5)
-- **Niederschlag** (ERA5)
+Die dargestellten Daten stammen aus dem [**Earth System Data Cube** (Version 3.0.2)](http://www.earthsystemdatalab.net/), einer multidimensionalen Umwelt-Datenstruktur, die verschiedene Fernerkundungs- und Reanalysedatensätze zusammenführt.
 
 Die Daten wurden mittels Python (Jupyter Notebooks, `xarray`, `zarr`, `pandas`) verarbeitet, zeitlich aggregiert (Monatsmittel), regional gefiltert (Europa) und als JSON-Dateien exportiert.
 
