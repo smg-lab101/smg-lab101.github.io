@@ -154,7 +154,7 @@
 
  /* Temperatur */
  .legend-gradient.temp {
-     background: linear-gradient(to right, #371144, #d64b57, #fde9ab);
+     background: linear-gradient(to right, #fde9ab, #d64b57, #371144);
  }
 
  /* Niederschlag */

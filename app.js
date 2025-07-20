@@ -30,7 +30,7 @@ const config = {
     width: 360,
     height: 300,
     fieldMap: {
-        temp: { field: 'air_temperature_2m', roll: 'air_temperature_2m_roll', label: 'Temperatur', color: d3.scaleLinear().domain([-10, 15, 40]).range(["#371144", "#d64b57", "#fde9ab"]) },
+        temp: { field: 'air_temperature_2m', roll: 'air_temperature_2m_roll', label: 'Temperatur', color: d3.scaleLinear().domain([-10, 15, 40]).range(["#fde9ab", "#d64b57", "#371144"]) },
         ndvi: { field: 'ndvi', roll: 'ndvi_roll', label: 'NDVI', color: d3.scaleLinear().domain([0, 1]).range(['#d9f0a3', '#004529']) },
         precip: { field: 'precipitation_era5', roll: 'precipitation_era5_roll', label: 'Niederschlag', color: d3.scaleLinear().domain([0, 10]).range(['#f7fbff', '#08306b']) }
     }
