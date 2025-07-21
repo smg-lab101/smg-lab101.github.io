@@ -1,4 +1,5 @@
-let tempCtx, ndviCtx, precipCtx; // oben global
+let tempCtx, ndviCtx, precipCtx;
+let lastData = [];
 
 function init() {
     // DOM-Elements
@@ -12,9 +13,9 @@ function init() {
     precipCtx = precipCanvas.getContext('2d');
 
     // Setup
-    setupCanvasInteraction(tempCanvas, tempCtx, 'temp');
-    setupCanvasInteraction(ndviCanvas, ndviCtx, 'ndvi');
-    setupCanvasInteraction(precipCanvas, precipCtx, 'precip');
+    setupCanvasInteraction(tempCanvas, 'temp');
+    setupCanvasInteraction(ndviCanvas, 'ndvi');
+    setupCanvasInteraction(precipCanvas, 'precip');
 
     setUpSlider();
 
@@ -109,13 +110,12 @@ function setUpSlider() {
     update(start);
 }
 
-function setupCanvasInteraction(canvas, ctx, configKey) {
+function setupCanvasInteraction(canvas, configKey) {
     setupTooltipInteraction(canvas, configKey);
     setupZoomInteraction(canvas);
 }
 
 function setupTooltipInteraction(canvas, configKey) {
-    const { color } = config.fieldMap[configKey];
 
     canvas.addEventListener('mousemove', ev => {
         const rect = canvas.getBoundingClientRect();
